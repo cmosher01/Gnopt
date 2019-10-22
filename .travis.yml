@@ -9,7 +9,6 @@ after_script:
     - "pwd"
     - "ls -al"
     - "tree"
-    - "cat bintray.json"
     - "cat build/publications/maven/pom-default.xml"
 deploy:
     provider: bintray
