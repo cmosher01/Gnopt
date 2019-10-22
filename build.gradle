@@ -1,0 +1,86 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+
+    testImplementation group: "org.junit.jupiter", name: "junit-jupiter-api", version: 'latest.release'
+    testRuntime group: "org.junit.jupiter", name: "junit-jupiter-engine", version: 'latest.release'
+    testRuntime group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+// generate "sources" jar file
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier.set 'sources'
+}
+
+assemble.dependsOn tasks.sourcesJar
+
+
+
+// generate POM file
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+        }
+    }
+}
+
+assemble.dependsOn tasks.generatePomFileForMavenPublication
+
+
+
+// generate bintray.json file (for travis deployment)
+
+def bintrayConfigFile = file("${projectDir}/bintray.json")
+
+import groovy.json.JsonOutput
+task generateBintrayConfigFile {
+    doLast {
+        def bintray = [
+            package: [
+                name: project.name,
+                repo: 'maven',
+                subject: 'cmosher01',
+                vcs_url: "https://github.com/cmosher01/${project.name}",
+                licenses: ['GPL-3.0']
+            ],
+            version: [name: version],
+            files: [
+                [
+                   includePattern: 'build/libs/(.*)',
+                   uploadPattern: "${project.group.toString().replace('.','/')}/${project.name}/${version}/\$1"
+               ], [
+                   includePattern: 'build/publications/maven/pom-default.xml',
+                   uploadPattern: "${project.group.toString().replace('.','/')}/${project.name}/${version}/${project.name}-${version}.pom"
+               ]
+            ],
+            publish: true
+        ]
+        def json = JsonOutput.toJson bintray
+        bintrayConfigFile.write json
+    }
+}
+generateBintrayConfigFile.outputs.file bintrayConfigFile
+
+assemble.dependsOn tasks.generateBintrayConfigFile
+clean.dependsOn tasks.cleanGenerateBintrayConfigFile
+
+
+
+sourceCompatibility = JavaVersion.VERSION_1_8
