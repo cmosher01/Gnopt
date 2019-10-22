@@ -1,15 +1,21 @@
 ---
 language: java
 jdk: openjdk8
+addons:
+    apt:
+        packages:
+            - "tree"
 after_script:
-  - "tree"
-  - "cat bintray.json"
-  - "cat build/publications/maven/pom-default.xml"
+    - "pwd"
+    - "ls -al"
+    - "tree"
+    - "cat bintray.json"
+    - "cat build/publications/maven/pom-default.xml"
 deploy:
-  provider: bintray
-  file: bintray.json
-  user: $BINTRAY_USERNAME
-  key: $BINTRAY_API_KEY
-  skip_cleanup: true
-  on:
-    tags: true
+    provider: bintray
+    file: bintray.json
+    user: $BINTRAY_USERNAME
+    key: $BINTRAY_API_KEY
+    skip_cleanup: true
+    on:
+        tags: true
