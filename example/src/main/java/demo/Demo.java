@@ -1,37 +1,3 @@
-# Gnopt
-
-Copyright © 2019, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
-
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CVSSQ2BWDCKQ2)
-[![License](https://img.shields.io/github/license/cmosher01/gnopt.svg)](https://www.gnu.org/licenses/gpl.html)
-
-
-Gnopt is a command-line option processor for Java programs. It handles GNU-style options:
-
-```sh
---option=value
-```
-
-This software is distributed under the
-[GPLv3](http://www.gnu.org/licenses/gpl-3.0-standalone.html)
-license.
-
-Include as a dependency in gradle:
-
-```groovy
-repositories {
-    jcenter()
-    mavenCentral()
-}
-
-dependencies {
-    implementation group: 'nu.mine.mosher.gnopt', name: 'Gnopt', version: 'latest.release'
-}
-```
-
-Example:
-
-```java
 package demo;
 
 import nu.mine.mosher.gnopt.Gnopt;
@@ -76,7 +42,7 @@ public class Demo {
 
     public static void main(String[] args) throws Throwable {
         // Pass args into Gnopt, and it will create a new instance,
-        // and call methods for each argument present:
+        // and call methods for each arg present:
         FoobarOpts opts = Gnopt.process(FoobarOpts.class, args);
 
         // then use opts as you wish within the rest of your program
@@ -86,11 +52,3 @@ public class Demo {
 
 
 }
-```
-
-```sh
-java -cp ... demo.Demo   --something=testing --verbose infile
-(verbose logging)
-arg: infile
-something: testing
-```

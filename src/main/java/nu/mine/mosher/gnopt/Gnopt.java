@@ -5,7 +5,7 @@ import org.slf4j.*;
 import java.lang.reflect.*;
 import java.util.*;
 
-class Gnopt<OptProc> {
+public class Gnopt<OptProc> {
     private static final Logger LOG = LoggerFactory.getLogger(Gnopt.class);
 
     public static class InvalidOption extends Throwable {
