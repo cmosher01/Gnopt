@@ -179,6 +179,7 @@ class GnoptCompilerTest {
         public void __(String ok) {}
         public void flag() {}
         public void value(Optional<String> ok) {}
+        public String twoProblems(Integer badArg) { return ""; }
     }
 
     @Test

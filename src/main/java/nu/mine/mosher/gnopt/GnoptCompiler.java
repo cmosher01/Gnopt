@@ -31,66 +31,75 @@ public class GnoptCompiler {
 
         LOG.trace("Compiling options from {}", optProcClass);
 
-        final Set<String> methodNamesEncountered = new HashSet<>();
+        final Set<String> namesEncountered = new HashSet<>();
 
         final Method[] methods = optProcClass.getMethods();
         for (final Method method : methods) {
-            final String methodName = method.getName();
+            final String name = method.getName();
 
             if (method.getDeclaringClass().equals(Object.class)) {
-                LOG.trace("\"{}\" method is from class java.lang.Object, skipping", methodName);
+                LOG.trace("\"{}\" method is from class java.lang.Object, skipping", name);
             } else {
-                if (methodNamesEncountered.contains(methodName)) {
-                    LOG.error("Duplicate method name \"{}\", found in {}", methodName, optProcClass);
+                // check for DUPLICATE method name
+                if (namesEncountered.contains(name)) {
+                    LOG.error("Duplicate method name \"{}\", found in {}", name, optProcClass);
                     fail = true;
                 } else {
-                    methodNamesEncountered.add(methodName);
+                    namesEncountered.add(name);
                 }
+
+                // ensure method RETURNS VOID
                 if (!method.getReturnType().equals(Void.TYPE)) {
-                    LOG.error("Method \"{}\" returning non-void, found in {}", methodName, optProcClass);
+                    LOG.error("Method \"{}\" must have a void return type, in {}", name, optProcClass);
                     fail = true;
-                } else {
-                    final Parameter[] methodParameters = method.getParameters();
-                    if (methodName.equals(METHOD_NAME_FOR_UNNAMED_ARGS)) {
-                        if (!(methodParameters.length == 1 && methodParameters[0].getType().equals(String.class))) {
-                            LOG.error("Argument processing method \"{}\" must have one and only one String argument, in {}", methodName, optProcClass);
-                            fail = true;
-                        } else {
-                            LOG.info("\"{}\" special argument-processing method; will be called for non-option arguments", methodName);
-                            mapNameToMethod.put(methodName, method);
-                        }
+                }
+
+                // ensure method had proper PARAMETERS
+                final Queue<Parameter> params = new LinkedList<>(Arrays.asList(method.getParameters()));
+                if (name.equals(METHOD_NAME_FOR_UNNAMED_ARGS)) {
+                    if (params.size() == 1 && isString(params.peek())) {
+                        LOG.info("\"{}\" special argument-processing method; will be called for non-option arguments", name);
+                        mapNameToMethod.put(name, method);
                     } else {
-                        if (1 < methodParameters.length) {
-                            LOG.error("Method \"{}\" has two or more arguments, in {}", methodName, optProcClass);
-                            fail = true;
-                        } else {
-                            if (methodParameters.length == 0) {
-                                LOG.info("\"{}\" flag-processing method; will be called for an option that is a flag (no value will be allowed)", methodName);
-                                mapNameToMethod.put(methodName, method);
-                            } else {
-                                final Type typ = methodParameters[0].getParameterizedType();
-                                if (!(typ instanceof ParameterizedType &&
-                                    ((ParameterizedType) typ).getRawType().equals(Optional.class) &&
-                                    ((ParameterizedType) typ).getActualTypeArguments()[0].equals(String.class))
-                                ) {
-                                    LOG.error("Option processing method \"{}\" must have one and only one Optional<String> argument, in {}", methodName, optProcClass);
-                                    fail = true;
-                                } else {
-                                    LOG.info("\"{}\" option-processing method; will be called for an option that allows a value", methodName);
-                                    mapNameToMethod.put(methodName, method);
-                                }
-                            }
-                        }
+                        LOG.error("Argument processing method \"{}\" must have one and only one String argument, in {}", name, optProcClass);
+                        fail = true;
+                    }
+                } else {
+                    if (params.isEmpty()) {
+                        LOG.info("\"{}\" flag-processing method; will be called for an option that is a flag (no value will be allowed)", name);
+                        mapNameToMethod.put(name, method);
+                    } else if (params.size() == 1 && isOptionalString(params.peek())) {
+                        LOG.info("\"{}\" option-processing method; will be called for an option that allows a value", name);
+                        mapNameToMethod.put(name, method);
+                    } else {
+                        LOG.error("Option processing method \"{}\" must have one and only one Optional<String> argument, in {}", name, optProcClass);
+                        fail = true;
                     }
                 }
             }
         }
-
 
         if (fail) {
             throw new InvalidOptionProcessorException();
         }
 
         return mapNameToMethod;
+    }
+
+
+
+    private static boolean isString(final Parameter p) {
+        return p.getType().equals(String.class);
+    }
+
+    private static boolean isOptionalString(final Parameter p) {
+        final Type typ = p.getParameterizedType();
+        if (!(typ instanceof ParameterizedType)) {
+            return false;
+        }
+        final ParameterizedType ptyp = (ParameterizedType)typ;
+        return
+            ptyp.getRawType().equals(Optional.class) &&
+            ptyp.getActualTypeArguments()[0].equals(String.class);
     }
 }
