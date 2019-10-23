@@ -1,0 +1,4 @@
+apply plugin: JavaLibraryPlugin
+
+group = 'nu.mine.mosher.gnopt'
+java.sourceCompatibility = JavaVersion.VERSION_1_8

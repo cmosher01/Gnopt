@@ -1,0 +1,12 @@
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: 'latest.release'
+    testRuntime group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: 'latest.release'
+    testRuntime group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
+}
