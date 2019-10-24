@@ -1,10 +1,10 @@
 package nu.mine.mosher.gnopt;
 
+import nu.mine.mosher.gnopt.compiler.GnoptCompiler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.slf4j.*;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,8 +38,8 @@ class GnoptCompilerTest {
 
     @Test
     void nominal() {
-        final Map<String, Method> opts = GnoptCompiler.compile(Nominal.class);
-        assertEquals(3, opts.size());
+        final GnoptCompiler<Nominal> uut = GnoptCompiler.compile(Nominal.class);
+        assertEquals(3, uut.countProcessors());
     }
 
 
@@ -52,8 +52,8 @@ class GnoptCompilerTest {
 
     @Test
     void inherited() {
-        final Map<String, Method> opts = GnoptCompiler.compile(Inherited.class);
-        assertEquals(4, opts.size());
+        final GnoptCompiler<Inherited> uut = GnoptCompiler.compile(Inherited.class);
+        assertEquals(4, uut.countProcessors());
     }
 
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
@@ -170,16 +170,37 @@ class GnoptCompilerTest {
 
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
     public static class AllMessages {
-        public void __() {}
-        public String a() { return ""; }
-        public void b(Random r) {}
-        public void c(Random r, Random s) {}
-        public void dup() {}
-        public void dup(Optional<String> v) {}
-        public void __(String ok) {}
-        public void flag() {}
-        public void value(Optional<String> ok) {}
-        public String twoProblems(Integer badArg) { return ""; }
+        public void __() {
+        }
+
+        public String a() {
+            return "";
+        }
+
+        public void b(Random r) {
+        }
+
+        public void c(Random r, Random s) {
+        }
+
+        public void dup() {
+        }
+
+        public void dup(Optional<String> v) {
+        }
+
+        public void __(String ok) {
+        }
+
+        public void flag() {
+        }
+
+        public void value(Optional<String> ok) {
+        }
+
+        public String twoProblems(Integer badArg) {
+            return "";
+        }
     }
 
     @Test
@@ -189,6 +210,6 @@ class GnoptCompilerTest {
 
     private static void bad(final Executable executable) {
         final GnoptCompiler.InvalidOptionProcessorException e = assertThrows(GnoptCompiler.InvalidOptionProcessorException.class, executable);
-        LOG.trace("exception", e);
+        LOG.trace("The testing framework caught the following exception:", e);
     }
 }
