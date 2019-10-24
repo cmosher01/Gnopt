@@ -181,6 +181,6 @@ class GnoptArgsTest {
 
     private static void bad(final Executable executable) {
         final Gnopt.InvalidOption e = assertThrows(Gnopt.InvalidOption.class, executable);
-        LOG.trace("exception:", e);
+        LOG.trace("The testing framework caught the following exception:", e);
     }
 }
