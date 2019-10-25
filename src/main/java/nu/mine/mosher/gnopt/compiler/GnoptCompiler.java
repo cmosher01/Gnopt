@@ -48,21 +48,12 @@ public class GnoptCompiler {
     }
 
     /**
-     * Checks if there is a processor for the given command line option.
-     * @param name name of the option (as passed on the command line)
-     * @return true if a processor exists for that option
-     */
-    public boolean hasProcessorFor(final String name) {
-        return this.mapNameToMethod.containsKey(name);
-    }
-
-    /**
      * Get the method that processes the given option.
      * @param name name of the option (as passed on the command line)
-     * @return the method to invoke to process the value of the option
+     * @return the method to invoke to process the value of the option, or empty
      */
-    public Method processor(final String name) {
-        return this.mapNameToMethod.get(name);
+    public Optional<Method> processor(final String name) {
+        return Optional.ofNullable(this.mapNameToMethod.get(name));
     }
 
 

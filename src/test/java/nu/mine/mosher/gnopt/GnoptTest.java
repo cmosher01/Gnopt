@@ -89,7 +89,7 @@ class GnoptTest {
 
     @Test
     void negInterFaceTest() {
-        assertThrows(InstantiationException.class, () -> Gnopt.process(Interf.class));
+        assertThrows(Gnopt.InvalidOption.class, () -> Gnopt.process(Interf.class));
     }
 
     @Test

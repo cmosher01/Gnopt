@@ -40,9 +40,9 @@ class GnoptCompilerTest {
     void nominal() {
         final GnoptCompiler uut = GnoptCompiler.compile(Nominal.class);
         assertAll(
-            () -> uut.hasProcessorFor("flag"),
-            () -> uut.hasProcessorFor("value"),
-            () -> uut.hasProcessorFor(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS)
+            () -> assertTrue(uut.processor("flag").isPresent()),
+            () -> assertTrue(uut.processor("value").isPresent()),
+            () -> assertTrue(uut.processor(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS).isPresent())
         );
     }
 
@@ -58,10 +58,10 @@ class GnoptCompilerTest {
     void inherited() {
         final GnoptCompiler uut = GnoptCompiler.compile(Inherited.class);
         assertAll(
-            () -> uut.hasProcessorFor("flag"),
-            () -> uut.hasProcessorFor("value"),
-            () -> uut.hasProcessorFor(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS),
-        () -> uut.hasProcessorFor("more")
+            () -> assertTrue(uut.processor("flag").isPresent()),
+            () -> assertTrue(uut.processor("value").isPresent()),
+            () -> assertTrue(uut.processor(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS).isPresent()),
+            () -> assertTrue(uut.processor("more").isPresent())
         );
     }
 
@@ -227,7 +227,7 @@ class GnoptCompilerTest {
     @Test
     void inheritedInterface() {
         final GnoptCompiler uut = GnoptCompiler.compile(Foo.class);
-        assertTrue(uut.hasProcessorFor("bar"));
+        assertTrue(uut.processor("bar").isPresent());
     }
 
     public static abstract class Abs {
@@ -243,8 +243,10 @@ class GnoptCompilerTest {
     @Test
     void concreteSubclass() {
         final GnoptCompiler uut = GnoptCompiler.compile(Conc.class);
-        assertTrue(uut.hasProcessorFor("abs"));
-        assertTrue(uut.hasProcessorFor("bar"));
+        assertAll(
+            () -> assertTrue(uut.processor("abs").isPresent()),
+            () -> assertTrue(uut.processor("bar").isPresent())
+        );
     }
 
     @Test
