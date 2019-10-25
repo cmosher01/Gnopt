@@ -18,6 +18,7 @@ public class Demo {
         //    1. must be public
         //    2. must have void return type
         //    3. must have one and only one Optional<String> argument
+        //    4. cannot be abstract
         // Turn on logging (slf4j) to see any error messages.
 
         // --something=whatever
@@ -26,14 +27,14 @@ public class Demo {
         }
 
         // non-option arguments call this method (two underscores)
-        public void __(Optional<String> x) {
-            System.err.println("arg: "+x.get());
+        public void __(Optional<String> val) {
+            System.err.println("arg: "+val.get());
         }
 
 
 
         // you can store configuration state in instance variables
-        private String foo = "default";
+        public String foo = "default";
     }
 
 

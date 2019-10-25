@@ -38,8 +38,12 @@ class GnoptCompilerTest {
 
     @Test
     void nominal() {
-        final GnoptCompiler<Nominal> uut = GnoptCompiler.compile(Nominal.class);
-        assertEquals(3, uut.countProcessors());
+        final GnoptCompiler uut = GnoptCompiler.compile(Nominal.class);
+        assertAll(
+            () -> uut.hasProcessorFor("flag"),
+            () -> uut.hasProcessorFor("value"),
+            () -> uut.hasProcessorFor(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS)
+        );
     }
 
 
@@ -52,8 +56,13 @@ class GnoptCompilerTest {
 
     @Test
     void inherited() {
-        final GnoptCompiler<Inherited> uut = GnoptCompiler.compile(Inherited.class);
-        assertEquals(4, uut.countProcessors());
+        final GnoptCompiler uut = GnoptCompiler.compile(Inherited.class);
+        assertAll(
+            () -> uut.hasProcessorFor("flag"),
+            () -> uut.hasProcessorFor("value"),
+            () -> uut.hasProcessorFor(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS),
+        () -> uut.hasProcessorFor("more")
+        );
     }
 
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
@@ -163,7 +172,7 @@ class GnoptCompilerTest {
     }
 
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
-    public static class AllMessages {
+    public abstract static class AllMessages {
         public void __() {
         }
 
@@ -195,11 +204,52 @@ class GnoptCompilerTest {
         public String twoProblems(Integer badArg) {
             return "";
         }
+
+        abstract public void abstractMethod(Optional<String> v);
     }
 
     @Test
     void negAllMessages() {
         bad(() -> GnoptCompiler.compile(AllMessages.class));
+    }
+
+    public interface IFoo {
+        void bar(Optional<String> value);
+    }
+    public static class Foo implements IFoo {
+        boolean ok;
+        @Override
+        public void bar(Optional<String> value) {
+            this.ok = true;
+        }
+    }
+
+    @Test
+    void inheritedInterface() {
+        final GnoptCompiler uut = GnoptCompiler.compile(Foo.class);
+        assertTrue(uut.hasProcessorFor("bar"));
+    }
+
+    public static abstract class Abs {
+        abstract public void abs(Optional<String> value);
+        public void bar(Optional<String> value) {}
+    }
+    public static class Conc extends Abs {
+        @Override
+        public void abs(Optional<String> value) {
+        }
+    }
+
+    @Test
+    void concreteSubclass() {
+        final GnoptCompiler uut = GnoptCompiler.compile(Conc.class);
+        assertTrue(uut.hasProcessorFor("abs"));
+        assertTrue(uut.hasProcessorFor("bar"));
+    }
+
+    @Test
+    void negAbstractMethod() {
+        bad(() -> GnoptCompiler.compile(Abs.class));
     }
 
     private static void bad(final Executable executable) {

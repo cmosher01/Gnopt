@@ -75,10 +75,10 @@ class GnoptTest {
 
     @Test
     void userCanThrowException() {
-        final InvocationTargetException invocationTargetException = assertThrows(InvocationTargetException.class, () -> Gnopt.process(MyOpts.class, "--item"));
-        LOG.trace("wrapping exception", invocationTargetException);
+        final Throwable thrown = assertThrows(Throwable.class, () -> Gnopt.process(MyOpts.class, "--item"));
+        LOG.trace("wrapping exception", thrown);
 
-        final Throwable userException = invocationTargetException.getTargetException();
+        final Throwable userException = thrown.getCause();
         LOG.trace("user exception", userException);
         assertEquals(MyOpts.MyException.class, userException.getClass());
     }

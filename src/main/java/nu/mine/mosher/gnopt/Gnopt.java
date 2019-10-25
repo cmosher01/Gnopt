@@ -13,9 +13,12 @@ public class Gnopt<OptProc> {
      */
     public static final String OPT_PREFIX = "\u002D\u002D";
 
-    public static class InvalidOption extends Throwable {
-        private InvalidOption(String message) {
+    public static class InvalidOption extends RuntimeException {
+        private InvalidOption(final String message) {
             super(message);
+        }
+        private InvalidOption(final Throwable cause) {
+            super(cause);
         }
     }
 
@@ -23,8 +26,9 @@ public class Gnopt<OptProc> {
      * The main entry-point for the option processor.
      *
      * @param classProcessor {@link Class} of option processor to create, cannot be {@code null}
-     * @param args array of command-line arguments to analyze for options, can be {@code null},
-     *             or can have elements that are {@code null} (which will be treated as empty strings)
+     * @param args array of command-line arguments to analyze for options,
+     *             can be {@code null} (which is treated as an empty array), or
+     *             can have elements that are {@code null} (which are treated as empty strings)
      * @param <OptProc> class of classProcessor
      * @return new instance of classProcessor, after processing args
      * @throws InvalidOption
@@ -33,11 +37,11 @@ public class Gnopt<OptProc> {
      * @throws IllegalAccessException
      */
     public static <OptProc> OptProc process(final Class<OptProc> classProcessor, final String... args) throws InvocationTargetException, IllegalAccessException, InstantiationException, InvalidOption {
-        final GnoptCompiler<OptProc> compiler = GnoptCompiler.compile(classProcessor);
+        final GnoptCompiler compilerProcessor = GnoptCompiler.compile(classProcessor);
         final OptProc instanceProcessor = classProcessor.newInstance();
 
         if (Objects.nonNull(args)) {
-            new Gnopt<>(compiler, instanceProcessor).process(args);
+            new Gnopt<>(compilerProcessor, instanceProcessor).process(args);
         }
 
         return instanceProcessor;
@@ -46,65 +50,93 @@ public class Gnopt<OptProc> {
 
 
     private static final Logger LOG = LoggerFactory.getLogger(Gnopt.class);
-    private final GnoptCompiler<OptProc> compiler;
+
+    private final GnoptCompiler compilerProcessor;
     private final OptProc instanceProcessor;
+
+    /**
+     * This is used to keep track of the "--" option that turns
+     * off subsequent option processing on the command line.
+     */
     private boolean optionProcessingIsEnabled = true;
 
-    private Gnopt(final GnoptCompiler<OptProc> compiler, final OptProc instanceProcessor) {
-        this.compiler = compiler;
+
+
+    private Gnopt(final GnoptCompiler compilerProcessor, final OptProc instanceProcessor) {
+        this.compilerProcessor = compilerProcessor;
         this.instanceProcessor = instanceProcessor;
     }
 
     private void process(final String[] args) throws InvocationTargetException, IllegalAccessException, InvalidOption {
         for (final String arg : args) {
-            processArg(Objects.nonNull(arg) ? arg : "");
+            processArg(Optional.ofNullable(arg).orElse(""));
         }
     }
 
     private void processArg(final String arg) throws InvalidOption, IllegalAccessException, InvocationTargetException {
         LOG.trace("processing argument/option: {}", arg.isEmpty() ? "(empty argument string)" : arg);
         if (this.optionProcessingIsEnabled && arg.startsWith(OPT_PREFIX)) {
-            if (arg.equals(OPT_PREFIX)) {
+            final String opt = arg.substring(OPT_PREFIX.length());
+            if (opt.isEmpty()) {
                 this.optionProcessingIsEnabled = false;
             } else {
-                option(arg.substring(OPT_PREFIX.length()));
+                processOption(opt);
             }
         } else {
-            nonoption(arg);
+            processNonOption(arg);
         }
+    }
+
+
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private class NameValue {
+        private final String name;
+        private final Optional<String> value;
+
+        private NameValue(final String name, final String value) {
+            this.name = name;
+            this.value = Optional.of(value);
+        }
+
+        private NameValue(final String[] r) throws InvalidOption {
+            assert 1 <= r.length && r.length <= 2;
+            this.name = r[0];
+            if (this.name.equals(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS)) {
+                throwInvalid(this.name);
+            }
+            this.value = Optional.ofNullable(r.length==2 ? r[1] : null);
+        }
+
+        private void process() {
+            Gnopt.this.process(this.name, this.value);
+        }
+    }
+
+    private void processOption(final String keyEqualsValue) throws InvalidOption {
+        new NameValue(keyEqualsValue.split("=", 2)).process();
+    }
+
+    private void processNonOption(final String value) throws InvalidOption {
+        new NameValue(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS, value).process();
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private static class NameValue {
-        final String name;
-        final Optional<String> value;
-        private NameValue(final String[] r) {
-            assert 1 <= r.length && r.length <= 2;
-            this.name = r[0];
-            this.value = Optional.ofNullable(r.length==2 ? r[1] : null);
+    private void process(final String name, final Optional<String> value) {
+        try {
+            processor(name).invoke(this.instanceProcessor, value); // <----- !!!!!!! The main purpose of Gnopt is this line.
+        } catch (final InvocationTargetException unwrap) {
+            throw new InvalidOption(unwrap.getCause());
+        } catch (final Throwable wrap) {
+            throw new InvalidOption(wrap);
         }
-    }
-
-    private void option(final String arg) throws InvalidOption, IllegalAccessException, InvocationTargetException {
-            value(new NameValue(arg.split("=", 2)));
-    }
-
-    private void nonoption(final String arg) throws InvalidOption, IllegalAccessException, InvocationTargetException {
-        processor(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS).invoke(this.instanceProcessor, Optional.of(arg));
-    }
-
-    private void value(final NameValue kv) throws InvalidOption, IllegalAccessException, InvocationTargetException {
-        if (kv.name.equals(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS)) {
-            throwInvalid(kv.name);
-        }
-        processor(kv.name).invoke(this.instanceProcessor, kv.value);
     }
 
     private Method processor(final String name) throws InvalidOption {
-        if (!this.compiler.hasProcessorFor(name)) {
+        if (!this.compilerProcessor.hasProcessorFor(name)) {
             throwInvalid(name);
         }
-        return this.compiler.processor(name);
+        return this.compilerProcessor.processor(name);
     }
 
     private static void throwInvalid(final String name) throws InvalidOption {
