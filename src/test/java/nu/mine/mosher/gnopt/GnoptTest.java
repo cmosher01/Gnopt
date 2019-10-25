@@ -17,7 +17,7 @@ class GnoptTest {
         private String item = "unchanged item";
         private String inputFileName = "unchanged inputFileName";
 
-        public void verbose() {
+        public void verbose(final Optional<String> value) {
             ++this.verbose;
         }
 
@@ -28,8 +28,8 @@ class GnoptTest {
             this.item = value.orElseThrow(MyException::new);
         }
 
-        public void __(final String value) {
-            this.inputFileName = value;
+        public void __(final Optional<String> value) {
+            this.inputFileName = value.get();
         }
     }
 
@@ -88,7 +88,12 @@ class GnoptTest {
     }
 
     @Test
-    void interFaceTest() {
+    void negInterFaceTest() {
         assertThrows(InstantiationException.class, () -> Gnopt.process(Interf.class));
+    }
+
+    @Test
+    void negNullClass() {
+        assertThrows(NullPointerException.class, () -> Gnopt.process(null));
     }
 }

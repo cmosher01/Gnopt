@@ -15,29 +15,24 @@ class GnoptArgsTest {
     public static class Nominal {
         int argCalled = 0;
         List<String> args = new ArrayList<>();
-
         {
             this.args.add("default_arg");
         }
 
         int valueCalled = 0;
-        int flagCalled = 0;
 
         // argument processing method being tested
-        public void __(final String value) {
+        public void __(final Optional<String> value) {
+            assert Objects.requireNonNull(value).isPresent();
             ++this.argCalled;
             if (this.args.size() == 1 && this.args.get(0).equals("default_arg")) {
                 this.args = new ArrayList<>();
             }
-            this.args.add(Objects.requireNonNull(value));
+            this.args.add(value.get());
         }
 
         public void value(final Optional<String> value) {
             ++this.valueCalled;
-        }
-
-        public void flag() {
-            ++this.flagCalled;
         }
     }
 
@@ -45,30 +40,15 @@ class GnoptArgsTest {
     void fixture() {
         final Nominal fixture = new Nominal();
         assertAll(
-            () -> assertUnchangedFlag(fixture),
             () -> assertUnchangedValue(fixture),
             () -> assertUnchangedArgument(fixture)
         );
-    }
-
-    private static void assertUnchangedFlag(final Nominal fixture) {
-        assertEquals(0, fixture.flagCalled);
-    }
-
-    private static void assertUnchangedValue(final Nominal fixture) {
-        assertEquals(0, fixture.valueCalled);
-    }
-
-    private static void assertUnchangedArgument(final Nominal fixture) {
-        assertEquals(1, fixture.args.size());
-        assertEquals("default_arg", fixture.args.get(0));
     }
 
     @Test
     void nil() throws Throwable {
         final Nominal fixture = Gnopt.process(Nominal.class);
         assertAll(
-            () -> assertUnchangedFlag(fixture),
             () -> assertUnchangedValue(fixture),
             () -> assertUnchangedArgument(fixture)
         );
@@ -77,8 +57,7 @@ class GnoptArgsTest {
     /*
     Abbreviations in test names:
     A non-option argument being tested
-    V arbitrary value-option (not being tested)
-    F arbitrary flag-option (not being tested)
+    V arbitrary option (not being tested)
      */
 
     @Test
@@ -87,7 +66,6 @@ class GnoptArgsTest {
         assertEquals(1, fixture.argCalled);
         assertEquals(1, fixture.args.size());
         assertEquals("foo", fixture.args.get(0));
-        assertUnchangedFlag(fixture);
         assertUnchangedValue(fixture);
     }
 
@@ -98,7 +76,6 @@ class GnoptArgsTest {
         assertEquals(2, fixture.args.size());
         assertEquals("foo", fixture.args.get(0));
         assertEquals("bar", fixture.args.get(1));
-        assertUnchangedFlag(fixture);
         assertUnchangedValue(fixture);
     }
 
@@ -108,7 +85,6 @@ class GnoptArgsTest {
         assertEquals(1, fixture.argCalled);
         assertEquals(1, fixture.args.size());
         assertEquals("foo", fixture.args.get(0));
-        assertUnchangedFlag(fixture);
     }
 
     @Test
@@ -118,26 +94,6 @@ class GnoptArgsTest {
         assertEquals(2, fixture.args.size());
         assertEquals("foo", fixture.args.get(0));
         assertEquals("bar", fixture.args.get(1));
-        assertUnchangedFlag(fixture);
-    }
-
-    @Test
-    void AFA() throws Throwable {
-        final Nominal fixture = Gnopt.process(Nominal.class, "foo", "--flag", "bar");
-        assertEquals(2, fixture.argCalled);
-        assertEquals(2, fixture.args.size());
-        assertEquals("foo", fixture.args.get(0));
-        assertEquals("bar", fixture.args.get(1));
-        assertUnchangedValue(fixture);
-    }
-
-    @Test
-    void AF() throws Throwable {
-        final Nominal fixture = Gnopt.process(Nominal.class, "foo", "--flag");
-        assertEquals(1, fixture.argCalled);
-        assertEquals(1, fixture.args.size());
-        assertEquals("foo", fixture.args.get(0));
-        assertUnchangedValue(fixture);
     }
 
     @Test
@@ -146,7 +102,6 @@ class GnoptArgsTest {
         assertEquals(1, fixture.argCalled);
         assertEquals(1, fixture.args.size());
         assertEquals("-", fixture.args.get(0));
-        assertUnchangedFlag(fixture);
         assertUnchangedValue(fixture);
     }
 
@@ -156,7 +111,6 @@ class GnoptArgsTest {
         assertEquals(1, fixture.argCalled);
         assertEquals(1, fixture.args.size());
         assertEquals("=", fixture.args.get(0));
-        assertUnchangedFlag(fixture);
         assertUnchangedValue(fixture);
     }
 
@@ -166,7 +120,26 @@ class GnoptArgsTest {
         assertEquals(1, fixture.argCalled);
         assertEquals(1, fixture.args.size());
         assertEquals("", fixture.args.get(0));
-        assertUnchangedFlag(fixture);
+        assertUnchangedValue(fixture);
+    }
+
+    @Test
+    void nullForArray() throws Throwable {
+        final String[] nullArray = null;
+        final Nominal fixture = Gnopt.process(Nominal.class, nullArray);
+        assertAll(
+            () -> assertUnchangedValue(fixture),
+            () -> assertUnchangedArgument(fixture)
+        );
+    }
+
+    @Test
+    void oneNullArgument() throws Throwable {
+        final String[] oneNullArg = new String[] { null };
+        final Nominal fixture = Gnopt.process(Nominal.class, oneNullArg);
+        assertEquals(1, fixture.argCalled);
+        assertEquals(1, fixture.args.size());
+        assertEquals("", fixture.args.get(0));
         assertUnchangedValue(fixture);
     }
 
@@ -177,6 +150,15 @@ class GnoptArgsTest {
     @Test
     void negNoArgs() {
         bad(() -> Gnopt.process(NoArgs.class, "no-args-allowed"));
+    }
+
+    private static void assertUnchangedValue(final Nominal fixture) {
+        assertEquals(0, fixture.valueCalled);
+    }
+
+    private static void assertUnchangedArgument(final Nominal fixture) {
+        assertEquals(1, fixture.args.size());
+        assertEquals("default_arg", fixture.args.get(0));
     }
 
     private static void bad(final Executable executable) {

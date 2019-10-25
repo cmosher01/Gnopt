@@ -15,7 +15,7 @@ class GnoptCompilerTest {
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
     public static class Nominal {
         // 1
-        public void flag() {
+        public void flag(final Optional<String> value) {
         }
 
         // 2
@@ -23,7 +23,7 @@ class GnoptCompilerTest {
         }
 
         // 3
-        public void __(final String value) {
+        public void __(final Optional<String> value) {
         }
 
         private void privateMethodNotSeenByCompiler() {
@@ -46,7 +46,7 @@ class GnoptCompilerTest {
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
     public static class Inherited extends Nominal {
         // 4
-        public void more() {
+        public void more(final Optional<String> value) {
         }
     }
 
@@ -136,17 +136,6 @@ class GnoptCompilerTest {
     }
 
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
-    public static class ArgProcWithOptionalString {
-        public void __(Optional<String> value) {
-        }
-    }
-
-    @Test
-    void negArgProcWithOptionalString() {
-        bad(() -> GnoptCompiler.compile(ArgProcWithOptionalString.class));
-    }
-
-    @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
     public static class ArgProcWithInteger {
         public void __(Integer value) {
         }
@@ -166,6 +155,11 @@ class GnoptCompilerTest {
     @Test
     void negArgProcWithInt() {
         bad(() -> GnoptCompiler.compile(ArgProcWithInt.class));
+    }
+
+    @Test
+    void negNullClass() {
+        assertThrows(NullPointerException.class, () -> GnoptCompiler.compile(null));
     }
 
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})

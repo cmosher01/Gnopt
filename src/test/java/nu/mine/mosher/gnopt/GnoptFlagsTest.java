@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.slf4j.*;
 
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,7 +19,8 @@ class GnoptFlagsTest {
         String arg = "default_arg";
 
         // flag being tested
-        public void flag() {
+        public void flag(final Optional<String> value) {
+            assert !Objects.requireNonNull(value).isPresent();
             ++this.flag;
         }
 
@@ -27,11 +28,11 @@ class GnoptFlagsTest {
             this.value = value;
         }
 
-        public void __(final String value) {
-            this.arg = value;
+        public void __(final Optional<String> value) {
+            this.arg = value.get();
         }
 
-        public void x() {
+        public void x(Optional<String> v) {
         }
 
         public void v(Optional<String> v) {
@@ -140,16 +141,6 @@ class GnoptFlagsTest {
     @Test
     void negInvalidFlagName() {
         bad(() -> Gnopt.process(Nominal.class, "--foobar"));
-    }
-
-    @Test
-    void negFlagWithValue() {
-        bad(() -> Gnopt.process(Nominal.class, "--flag=xyz"));
-    }
-
-    @Test
-    void negFlagWithEmptyValue() {
-        bad(() -> Gnopt.process(Nominal.class, "--flag="));
     }
 
     @Test

@@ -47,26 +47,26 @@ public class Demo {
      */
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
     public static class FoobarOpts {
-        // Each public method becomes a command line option:
+        // Each public method becomes a command line option.
+        // Methods requirements:
+        //    1. must be public
+        //    2. must have void return type
+        //    3. must have one and only one Optional<String> argument
+        // Turn on logging (slf4j) to see any error messages.
 
         // --something=whatever
         public void something(Optional<String> val) {
             foo = val.orElse("");
         }
 
-        // --verbose
-        public void verbose() {
-            System.err.println("(verbose logging)");
-        }
-
         // non-option arguments call this method (two underscores)
-        public void __(String x) {
-            System.err.println("arg: "+x);
+        public void __(Optional<String> x) {
+            System.err.println("arg: "+x.get());
         }
 
 
 
-        // you can also store configuration state in instance variables
+        // you can store configuration state in instance variables
         private String foo = "default";
     }
 
@@ -76,7 +76,7 @@ public class Demo {
 
     public static void main(String[] args) throws Throwable {
         // Pass args into Gnopt, and it will create a new instance,
-        // and call methods for each argument present:
+        // and call methods for each arg present:
         FoobarOpts opts = Gnopt.process(FoobarOpts.class, args);
 
         // then use opts as you wish within the rest of your program
@@ -89,8 +89,7 @@ public class Demo {
 ```
 
 ```sh
-java -cp ... demo.Demo   --something=testing --verbose infile
-(verbose logging)
+java -cp ... demo.Demo   --something=testing infile
 arg: infile
 something: testing
 ```
