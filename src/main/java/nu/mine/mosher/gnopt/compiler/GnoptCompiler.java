@@ -1,9 +1,23 @@
 package nu.mine.mosher.gnopt.compiler;
 
-import org.slf4j.*;
 
-import java.lang.reflect.*;
-import java.util.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
+
+
 
 /**
  * A compiler that compiles an option processor class.
@@ -59,6 +73,7 @@ public class GnoptCompiler {
 
 
     private static final Logger LOG = LoggerFactory.getLogger(GnoptCompiler.class);
+    private static final Map<String, Predicate<Method>> REQUIREMENTS = reqs();
 
     private final Map<String, Method> mapNameToMethod = new HashMap<>();
     private boolean failure;
@@ -78,30 +93,14 @@ public class GnoptCompiler {
         }
     }
 
-    private void error(final String requirement, final Method method) {
-        LOG.error("Failure, requirement=\"{}\", method=\"{}\"", requirement, method);
-    }
-
     private void useMethodIfValid(final Method method) {
         boolean badMethod = false;
 
-        // ensure method RETURNS void
-        if (!method.getReturnType().equals(Void.TYPE)) {
-            error("return type must be void", method);
-            badMethod = true;
-        }
-
-        // ensure method has Optional<String> PARAMETER
-        final Queue<Parameter> params = new LinkedList<>(Arrays.asList(method.getParameters()));
-        if (!(params.size() == 1 && isOptionalString(params.peek()))) {
-            error("must have one and only one Optional<String> argument", method);
-            badMethod = true;
-        }
-
-        // ensure method is not ABSTRACT
-        if (Modifier.isAbstract(method.getModifiers())) {
-            error("cannot be abstract", method);
-            badMethod = true;
+        for (final Map.Entry<String, Predicate<Method>> req : REQUIREMENTS.entrySet()) {
+            if (!req.getValue().test(method)) {
+                LOG.error("Failure, requirement=\"{}\", method=\"{}\"", req.getKey(), method);
+                badMethod = true;
+            }
         }
 
         if (badMethod) {
@@ -111,14 +110,22 @@ public class GnoptCompiler {
         }
     }
 
+    private static Map<String, Predicate<Method>> reqs() {
+        final HashMap<String, Predicate<Method>> reqs = new HashMap<>();
+        reqs.put("return type must be void", m -> m.getReturnType().equals(Void.TYPE));
+        reqs.put("must have one and only one Optional<String> argument", m -> m.getParameters().length == 1 && isOptionalString(m.getParameters()[0]));
+        reqs.put("cannot be abstract", m -> !Modifier.isAbstract(m.getModifiers()));
+        return Collections.unmodifiableMap(reqs);
+    }
+
     private static boolean isOptionalString(final Parameter p) {
         final Type typ = p.getParameterizedType();
         if (!(typ instanceof ParameterizedType)) {
             return false;
         }
-        final ParameterizedType ptyp = (ParameterizedType) typ;
+        final ParameterizedType ptyp = (ParameterizedType)typ;
         return
             ptyp.getRawType().equals(Optional.class) &&
-                ptyp.getActualTypeArguments()[0].equals(String.class);
+            ptyp.getActualTypeArguments()[0].equals(String.class);
     }
 }

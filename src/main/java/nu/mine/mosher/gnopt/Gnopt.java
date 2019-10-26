@@ -8,12 +8,12 @@ import java.util.*;
 
 public class Gnopt<OptProc> {
     /**
-     * Prefix string of characters to indicate that an argument is an option.
+     * Prefix string of characters that indicates an argument is an option.
      * GNU standard is two hyphen-minus characters.
      */
     public static final String OPT_PREFIX = "\u002D\u002D";
 
-    public static class InvalidOption extends RuntimeException {
+    public static class InvalidOption extends Exception {
         private InvalidOption(final String message) {
             super(message);
         }
@@ -67,7 +67,7 @@ public class Gnopt<OptProc> {
 
     private void process(final String[] args) throws InvalidOption {
         for (final String arg : Objects.requireNonNull(args)) {
-            processArg(Optional.ofNullable(arg).orElse(""));
+            processArg(Objects.toString(arg, ""));
         }
     }
 
@@ -127,6 +127,8 @@ public class Gnopt<OptProc> {
     private void process(final String name, final Optional<String> value) throws InvalidOption {
         try {
             processor(name).invoke(this.instanceProcessor, value); // <----- !!!!!!! The main purpose of Gnopt is this line.
+        } catch (final InvalidOption passThrough) {
+            throw passThrough;
         } catch (final InvocationTargetException unwrap) {
             throw new InvalidOption(unwrap.getCause());
         } catch (final Throwable wrap) {
@@ -167,7 +169,7 @@ public class Gnopt<OptProc> {
     private static <OptProc> OptProc instantiate(final Class<OptProc> classProcessor) throws InvalidOption {
         try {
             return classProcessor.newInstance();
-        } catch (final Throwable wrap) {
+        } catch (final Throwable wrap) { // must catch Throwable, because newInstance
             throw new InvalidOption(wrap);
         }
     }
