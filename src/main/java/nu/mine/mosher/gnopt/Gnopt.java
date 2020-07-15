@@ -99,11 +99,15 @@ public class Gnopt<OptProc> {
 
         private NameValue(final String[] r) throws InvalidOption {
             final String[] r2 = Arrays.copyOf(r, 2);
-            this.name = r2[0];
+            this.name = filterName(r2[0]);
             if (this.name.equals(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS)) {
                 throwInvalid(this.name);
             }
             this.value = Optional.ofNullable(r2[1]);
+        }
+
+        private String filterName(final String name) {
+            return name.replace('-', '_');
         }
 
         private void process() throws InvalidOption {
