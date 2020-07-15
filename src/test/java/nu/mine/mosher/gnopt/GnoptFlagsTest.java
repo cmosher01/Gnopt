@@ -148,6 +148,11 @@ class GnoptFlagsTest {
         bad(() -> Gnopt.process(Nominal.class, "--__"));
     }
 
+    @Test
+    void negDashDash() {
+        bad(() -> Gnopt.process(Nominal.class, "----"));
+    }
+
     private static void bad(final Executable executable) {
         final Gnopt.InvalidOption e = assertThrows(Gnopt.InvalidOption.class, executable);
         LOG.trace("The testing framework caught the following exception:", e);

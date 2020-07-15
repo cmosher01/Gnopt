@@ -3,7 +3,6 @@ package nu.mine.mosher.gnopt;
 import org.junit.jupiter.api.Test;
 import org.slf4j.*;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,6 +13,7 @@ class GnoptTest {
     @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
     public static class MyOpts {
         private int verbose = 0;
+        private int dryrun = 0;
         private String item = "unchanged item";
         private String inputFileName = "unchanged inputFileName";
 
@@ -30,6 +30,10 @@ class GnoptTest {
 
         public void __(final Optional<String> value) {
             this.inputFileName = value.get();
+        }
+
+        public void dry_run(final Optional<String> value) {
+            ++this.dryrun;
         }
     }
 
@@ -95,5 +99,11 @@ class GnoptTest {
     @Test
     void negNullClass() {
         assertThrows(NullPointerException.class, () -> Gnopt.process(null));
+    }
+
+    @Test
+    void nominalHypenated() throws Throwable {
+        final MyOpts opts = Gnopt.process(MyOpts.class, "--dry-run");
+        assertEquals(1, opts.dryrun);
     }
 }
