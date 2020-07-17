@@ -1,37 +1,3 @@
-# Gnopt
-
-Copyright © 2019, Christopher Alan Mosher, Shelton, Connecticut, USA, <cmosher01@gmail.com>.
-
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CVSSQ2BWDCKQ2)
-[![License](https://img.shields.io/github/license/cmosher01/gnopt.svg)](https://www.gnu.org/licenses/gpl.html)
-
-
-Gnopt is a command-line option processor for Java programs. It handles GNU-style options:
-
-```sh
---option=value
-```
-
-This software is distributed under the
-[GPLv3](http://www.gnu.org/licenses/gpl-3.0-standalone.html)
-license.
-
-Include as a dependency in gradle:
-
-```groovy
-repositories {
-    jcenter()
-    mavenCentral()
-}
-
-dependencies {
-    implementation group: 'nu.mine.mosher.gnopt', name: 'Gnopt', version: 'latest.release'
-}
-```
-
-Example:
-
-```java
 package demo;
 
 import nu.mine.mosher.gnopt.Gnopt;
@@ -82,10 +48,3 @@ public class FoobarOpts {
         System.err.println("something: "+opts.foo);
     }
 }
-```
-
-```sh
-java -cp ... demo.Demo   --something=testing infile
-arg: infile
-something: testing
-```

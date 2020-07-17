@@ -34,6 +34,9 @@ class GnoptCompilerTest {
 
         void packageMethodNotSeenByCompiler() {
         }
+
+        public static void ignoreStaticMethods(int x) {
+        }
     }
 
     @Test

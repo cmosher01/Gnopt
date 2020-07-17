@@ -84,7 +84,7 @@ public class GnoptCompiler {
     private void comp(final Class classProcessor) {
         LOG.trace("====> Compiling option-processor {}", classProcessor);
         for (final Method method : classProcessor.getMethods()) {
-            if (method.getDeclaringClass().equals(Object.class)) {
+            if (method.getDeclaringClass().equals(Object.class) || Modifier.isStatic(method.getModifiers())) {
                 LOG.trace("----> Skipping, method=\"{}\"", method);
             } else {
                 LOG.trace("----> Checking, method=\"{}\"", method);
