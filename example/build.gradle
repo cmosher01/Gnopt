@@ -8,9 +8,15 @@ repositories {
     mavenCentral()
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+}
+
 dependencies {
     implementation group: 'nu.mine.mosher.gnopt', name: 'Gnopt', version: 'latest.integration'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
 }
 
-application.mainClassName = 'demo.Demo'
+application {
+    mainClassName = 'demo.FoobarOpts'
+}
