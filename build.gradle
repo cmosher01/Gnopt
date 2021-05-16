@@ -1,11 +1,73 @@
-def inc(module) {
-    apply from: "${projectDir}/gradle/${module}.gradle"
+plugins {
+    id 'java-library'
+    id 'signing'
+    id 'maven-publish'
 }
 
-inc('version')
-inc('project')
-inc('dependencies')
-inc('test')
-inc('srcjar')
-inc('maven')
-inc('bintray')
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.integration'
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: 'latest.release'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: 'latest.release'
+    testRuntimeOnly group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of 11
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from project.components.java
+            pom {
+                name = 'Gnopt'
+                description = 'Parses GNU-style command line arguments --like=this'
+                url = 'https://github.com/cmosher01/Gnopt'
+                inceptionYear = '2019'
+                packaging = 'jar'
+                licenses {
+                    license {
+                        name = 'GNU General Public License v3.0'
+                        url = 'https://www.gnu.org/licenses/gpl-3.0.html'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'cmosher01'
+                        name = 'Christopher Alan Mosher'
+                        email = 'cmosher01@gmail.com'
+                        url = 'https://mosher.mine.nu'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/cmosher01/Gnopt.git'
+                    developerConnection = 'scm:git:ssh://github.com/cmosher01/Gnopt.git'
+                    url = 'http://github.com/cmosher01/Gnopt'
+                }
+            }
+        }
+    }
+}
+tasks.assemble.dependsOn tasks.generatePomFileForMavenPublication
+
+signing {
+    sign publishing.publications.maven
+}
+tasks.assemble.dependsOn tasks.signMavenPublication
+
+group = 'nu.mine.mosher.gnopt'
+
+version = '1.1.2'
