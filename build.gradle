@@ -30,7 +30,7 @@ publishing {
         maven(MavenPublication) {
             from project.components.java
             pom {
-                name = 'Gnopt'
+                name = 'gnopt'
                 description = 'Parses GNU-style command line arguments --like=this'
                 url = 'https://github.com/cmosher01/Gnopt'
                 inceptionYear = '2019'
