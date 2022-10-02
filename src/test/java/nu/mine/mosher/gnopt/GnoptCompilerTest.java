@@ -261,4 +261,63 @@ class GnoptCompilerTest {
         final GnoptCompiler.InvalidOptionProcessorException e = assertThrows(GnoptCompiler.InvalidOptionProcessorException.class, executable);
         LOG.trace("The testing framework caught the following exception:", e);
     }
+
+    public static class IgnorePrivate {
+        private void x(Optional<String> value) {
+        }
+        public void y(Optional<String> value) {
+        }
+    }
+
+    @Test
+    void ignoresPrivate() {
+        final GnoptCompiler uut = GnoptCompiler.compile(IgnorePrivate.class);
+        assertAll(
+            () -> assertTrue(uut.processor("x").isEmpty()),
+            () -> assertTrue(uut.processor("y").isPresent())
+        );
+    }
+
+    public static class HiddenMethod {
+        public void __hideMe(Optional<String> value) {
+        }
+        public void doNotHideMe(Optional<String> value) {
+        }
+    }
+
+    @Test
+    void hidesMethods() {
+        final GnoptCompiler uut = GnoptCompiler.compile(HiddenMethod.class);
+        assertAll(
+            () -> assertTrue(uut.processor("__hideMe").isEmpty()),
+            () -> assertTrue(uut.processor("doNotHideMe").isPresent())
+        );
+    }
+
+
+    public static class NominalMapping {
+        public static Map<String, String> GNOPT = Map.of("void", "__v");
+        public boolean called = false;
+        public void __v(Optional<String> value) {
+            this.called = true;
+        }
+    }
+
+    @Test
+    void nominalMapping() throws Gnopt.InvalidOption {
+        final GnoptCompiler uut = GnoptCompiler.compile(NominalMapping.class);
+        assertTrue(uut.processor("void").isPresent(), "option name mapping is present");
+        final var opt = Gnopt.process(NominalMapping.class, "--void=val");
+        assertTrue(opt.called);
+    }
+
+    public static class MappingMethodDoesNotExist {
+        public static Map<String, String> GNOPT = Map.of("void", "doesNotExist");
+    }
+
+    @Test
+    void negMappedMethodDoesNotExist() {
+        // TODO: handle this error the same way as other "requirements", instead of throwing an exception
+        assertThrows(RuntimeException.class, () -> GnoptCompiler.compile(MappingMethodDoesNotExist.class));
+    }
 }

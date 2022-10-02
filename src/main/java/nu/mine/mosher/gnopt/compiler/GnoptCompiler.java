@@ -5,11 +5,7 @@ package nu.mine.mosher.gnopt.compiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +25,12 @@ public class GnoptCompiler {
      * It is currently defined as two underscores.
      */
     public static final String METHOD_NAME_FOR_UNNAMED_ARGS = "\u005F\u005F";
+
+    /**
+     * The name of the public static Map field that provides an optional mapping of Option Names to Method Names.
+     * This will allow Option Names that are invalid as Method Names, such as "void" or "for".
+     */
+    public static final String STATIC_MAPPING_FIELD_NAME = "GNOPT";
 
     public static final class InvalidOptionProcessorException extends RuntimeException {
     }
@@ -83,16 +85,29 @@ public class GnoptCompiler {
     private void comp(final Class<?> classProcessor) {
         LOG.trace("====> Compiling option-processor {}", classProcessor);
         for (final Method method : classProcessor.getMethods()) {
-            if (method.getDeclaringClass().equals(Object.class) || Modifier.isStatic(method.getModifiers())) {
+            if (isSkipped(method)) {
                 LOG.trace("----> Skipping, method=\"{}\"", method);
             } else {
                 LOG.trace("----> Checking, method=\"{}\"", method);
-                useMethodIfValid(method);
+                useMethodIfValid(method, method.getName());
             }
         }
+
+        final var map = getMapping(classProcessor);
+        map.forEach((k,v) -> {
+            try {
+                final var m = classProcessor.getMethod(v, Optional.class);
+                LOG.trace("----> Checking, method=\"{}\"", m);
+                useMethodIfValid(m, k);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-    private void useMethodIfValid(final Method method) {
+    private void useMethodIfValid(final Method method, final String optionName) {
+        // TODO: add some validation of the optionName such as: can't be empty, can't be "__", others?
+
         boolean badMethod = false;
 
         for (final Map.Entry<String, Predicate<Method>> req : REQUIREMENTS.entrySet()) {
@@ -105,7 +120,7 @@ public class GnoptCompiler {
         if (badMethod) {
             this.failure = true;
         } else {
-            this.mapNameToMethod.put(method.getName(), method);
+            this.mapNameToMethod.put(optionName, method);
         }
     }
 
@@ -113,7 +128,8 @@ public class GnoptCompiler {
         return Map.of(
             "return type must be void", m -> m.getReturnType().equals(Void.TYPE),
             "must have one and only one Optional<String> argument", m -> m.getParameters().length == 1 && isOptionalString(m.getParameters()[0]),
-            "cannot be abstract", m -> !Modifier.isAbstract(m.getModifiers()));
+            "cannot be abstract", m -> !Modifier.isAbstract(m.getModifiers())
+        );
     }
 
     private static boolean isOptionalString(final Parameter p) {
@@ -125,5 +141,28 @@ public class GnoptCompiler {
         return
             ptyp.getRawType().equals(Optional.class) &&
             ptyp.getActualTypeArguments()[0].equals(String.class);
+    }
+
+    private static Map<String,String> getMapping(final Class<?> classProcessor) {
+        try {
+            final var map = classProcessor.getField(STATIC_MAPPING_FIELD_NAME);
+            return (Map<String, String>)map.get(null);
+        } catch (final Throwable e) {
+            return Map.of();
+        }
+    }
+
+    private static boolean isSkipped(final Method method) {
+        return
+            method.getDeclaringClass().equals(Object.class) ||
+            Modifier.isStatic(method.getModifiers()) ||
+            isHidden(method);
+    }
+
+    private static boolean isHidden(final Method method) {
+        final var name = method.getName();
+        return
+            name.startsWith(METHOD_NAME_FOR_UNNAMED_ARGS) &&
+            !name.equals(METHOD_NAME_FOR_UNNAMED_ARGS);
     }
 }
