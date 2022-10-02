@@ -16,7 +16,7 @@ java {
 }
 
 dependencies {
-    implementation group: 'nu.mine.mosher.gnopt', name: 'Gnopt', version: 'latest.release'
+    implementation group: 'nu.mine.mosher.gnopt', name: 'gnopt', version: 'latest.release'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
 }
 
