@@ -3,17 +3,20 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
-    jcenter()
     mavenCentral()
+    maven {
+        url = uri('https://public:\u0067hp_fya6Kseu3XOBMg2icbg7f1LP6ZFYjj35v4Zj@maven.pkg.github.com/cmosher01/*')
+    }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
+    toolchain {
+        languageVersion = JavaLanguageVersion.of 11
+    }
 }
 
 dependencies {
-    implementation group: 'nu.mine.mosher.gnopt', name: 'Gnopt', version: 'latest.integration'
+    implementation group: 'nu.mine.mosher.gnopt', name: 'Gnopt', version: 'latest.release'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: 'latest.integration'
 }
 

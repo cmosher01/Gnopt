@@ -101,7 +101,7 @@ public class Gnopt<OptProc> {
             final String[] r2 = Arrays.copyOf(r, 2);
             this.name = filterName(r2[0]);
             if (this.name.equals(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS)) {
-                throwInvalid(this.name);
+                throw invalid(this.name);
             }
             this.value = Optional.ofNullable(r2[1]);
         }
@@ -142,23 +142,23 @@ public class Gnopt<OptProc> {
 
     private Method processor(final String name) throws InvalidOption {
         final Optional<Method> method = this.compilerProcessor.processor(name);
-        if (!method.isPresent()) {
-            throwInvalid(name);
+        if (method.isEmpty()) {
+            throw invalid(name);
         }
         return method.get();
     }
 
 
 
-    private static void throwInvalid(final String name) throws InvalidOption {
+    private static InvalidOption invalid(final String name) {
         if (name.equals(GnoptCompiler.METHOD_NAME_FOR_UNNAMED_ARGS)) {
-            throwInvalid(null, "no arguments are allowed");
-        } else {
-            throwInvalid(name, "invalid option");
+            return invalid(null, "no arguments are allowed");
         }
+
+        return invalid(name, "invalid option");
     }
 
-    private static void throwInvalid(final String name, final String message) throws InvalidOption {
+    private static InvalidOption invalid(final String name, final String message) {
         final String display;
         if (Objects.isNull(name)) {
             display = "";
@@ -167,9 +167,10 @@ public class Gnopt<OptProc> {
         } else {
             display = " \"" + name + "\"";
         }
-        throw new InvalidOption(message + display);
+        return new InvalidOption(message + display);
     }
 
+    @SuppressWarnings("deprecation") // catching Throwable mitigates this
     private static <OptProc> OptProc instantiate(final Class<OptProc> classProcessor) throws InvalidOption {
         try {
             return classProcessor.newInstance();

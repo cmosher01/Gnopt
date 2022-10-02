@@ -10,7 +10,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -42,7 +41,7 @@ public class GnoptCompiler {
      * @throws InvalidOptionProcessorException if the classProcessor is invalid
      *      (if so, {@link GnoptCompiler#failure()} will return {@code true})
      */
-    public static GnoptCompiler compile(final Class classProcessor) throws InvalidOptionProcessorException {
+    public static GnoptCompiler compile(final Class<?> classProcessor) throws InvalidOptionProcessorException {
         final GnoptCompiler compiler = new GnoptCompiler();
 
         compiler.comp(Objects.requireNonNull(classProcessor));
@@ -73,7 +72,7 @@ public class GnoptCompiler {
 
 
     private static final Logger LOG = LoggerFactory.getLogger(GnoptCompiler.class);
-    private static final Map<String, Predicate<Method>> REQUIREMENTS = reqs();
+    private static final Map<String, Predicate<Method>> REQUIREMENTS = requirements();
 
     private final Map<String, Method> mapNameToMethod = new HashMap<>();
     private boolean failure;
@@ -81,7 +80,7 @@ public class GnoptCompiler {
     private GnoptCompiler() {
     }
 
-    private void comp(final Class classProcessor) {
+    private void comp(final Class<?> classProcessor) {
         LOG.trace("====> Compiling option-processor {}", classProcessor);
         for (final Method method : classProcessor.getMethods()) {
             if (method.getDeclaringClass().equals(Object.class) || Modifier.isStatic(method.getModifiers())) {
@@ -110,12 +109,11 @@ public class GnoptCompiler {
         }
     }
 
-    private static Map<String, Predicate<Method>> reqs() {
-        final HashMap<String, Predicate<Method>> reqs = new HashMap<>();
-        reqs.put("return type must be void", m -> m.getReturnType().equals(Void.TYPE));
-        reqs.put("must have one and only one Optional<String> argument", m -> m.getParameters().length == 1 && isOptionalString(m.getParameters()[0]));
-        reqs.put("cannot be abstract", m -> !Modifier.isAbstract(m.getModifiers()));
-        return Collections.unmodifiableMap(reqs);
+    private static Map<String, Predicate<Method>> requirements() {
+        return Map.of(
+            "return type must be void", m -> m.getReturnType().equals(Void.TYPE),
+            "must have one and only one Optional<String> argument", m -> m.getParameters().length == 1 && isOptionalString(m.getParameters()[0]),
+            "cannot be abstract", m -> !Modifier.isAbstract(m.getModifiers()));
     }
 
     private static boolean isOptionalString(final Parameter p) {

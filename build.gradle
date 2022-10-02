@@ -1,6 +1,5 @@
 plugins {
     id 'java-library'
-    id 'signing'
     id 'maven-publish'
 }
 
@@ -20,8 +19,6 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of 11
     }
-    withJavadocJar()
-    withSourcesJar()
 }
 
 test {
@@ -63,18 +60,13 @@ publishing {
 }
 tasks.assemble.dependsOn tasks.generatePomFileForMavenPublication
 
-signing {
-    sign publishing.publications.maven
-}
-tasks.assemble.dependsOn tasks.signMavenPublication
-
 publishing {
     repositories {
         maven {
-            url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            url 'https://maven.pkg.github.com/cmosher01/Gnopt'
             credentials {
-                username = ossrhUsername
-                password = ossrhPassword
+                username = System.getenv('GITHUB_ACTOR') ?: 'restricted'
+                password = System.getenv('GITHUB_TOKEN') ?: 'restricted'
             }
         }
     }
@@ -82,4 +74,4 @@ publishing {
 
 group = 'nu.mine.mosher.gnopt'
 
-version = '1.1.2'
+version = '1.2.0'
